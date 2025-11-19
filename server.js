@@ -61,11 +61,34 @@ async function executeCode(code, extension, command) {
 
 // Python endpoint
 app.post('/run/python', async (req, res) => {
+    // Find available python executable (prefer python3)
+    const findPython = () => new Promise((resolve) => {
+        exec('python3 --version', (err) => {
+            if (!err) return resolve('python3');
+            exec('python --version', (err2) => {
+                if (!err2) return resolve('python');
+                resolve(null);
+            });
+        });
+    });
+
     try {
+        const pyCmd = await findPython();
+        if (!pyCmd) {
+            return res.status(500).json({
+                error: 'Python is not installed in the runtime ("python3" or "python" not found).',
+                hints: [
+                    'If you control the Railway service, deploy with a Dockerfile that includes Python.',
+                    'Or switch to a Railway environment that provides Python.',
+                    'As a quick workaround, run Python execution client-side with Pyodide or similar.'
+                ]
+            });
+        }
+
         const result = await executeCode(
             req.body.code,
             '.py',
-            (filepath) => `python "${filepath}"`
+            (filepath) => `${pyCmd} "${filepath}"`
         );
         res.json(result);
     } catch (err) {
