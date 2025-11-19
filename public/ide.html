@@ -28,7 +28,8 @@
             display: flex;
             color: var(--dark);
             height: 100vh;
-            overflow: hidden;
+            overflow: auto;
+            -webkit-overflow-scrolling: touch;
         }
 
         .sidebar {
@@ -42,6 +43,7 @@
             left: 0;
             top: 0;
             flex-shrink: 0;
+            transition: transform 0.28s ease;
         }
 
         .logo-container {
@@ -114,6 +116,7 @@
             overflow-y: auto;
             width: calc(100% - 240px);
             height: 100vh;
+            min-height: 100vh;
         }
 
         .container {
@@ -147,11 +150,13 @@
 
         textarea {
             width: 100%;
-            height: 300px;
+            min-height: 220px;
+            height: 40vh;
+            max-height: 600px;
             padding: 16px;
             border: 1px solid #e2e8f0;
             border-radius: 8px;
-            resize: none;
+            resize: vertical;
             font-family: 'JetBrains Mono', monospace;
             font-size: 14px;
             line-height: 1.5;
@@ -319,6 +324,62 @@
         ::-webkit-scrollbar-thumb:hover {
             background: var(--primary);
         }
+
+        /* Mobile / Responsive tweaks */
+        .mobile-top {
+            display: none;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 8px;
+            background: white;
+            border-radius: 8px;
+            margin-bottom: 12px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.06);
+        }
+
+        .mobile-top button {
+            font-size: 20px;
+            width: 44px;
+            height: 44px;
+            border-radius: 8px;
+            justify-content: center;
+        }
+
+        @media (max-width: 900px) {
+            .sidebar {
+                width: 100%;
+                height: auto;
+                top: 0;
+                left: 0;
+                transform: translateY(-110%);
+                z-index: 1200;
+            }
+
+            .sidebar.open {
+                transform: translateY(0);
+            }
+
+            .main-content {
+                margin-left: 0;
+                width: 100%;
+                padding: 16px;
+                height: auto;
+            }
+
+            .container {
+                grid-template-columns: 1fr;
+            }
+
+            .mobile-top { display: flex; }
+
+            .buttons { margin: 12px 0; }
+
+            button { width: 100%; padding: 14px; font-size: 16px; }
+
+            #outputFrame { height: 40vh; }
+
+            .console { max-height: 30vh; min-height: 120px; }
+        }
     </style>
 </head>
 <body>
@@ -357,6 +418,10 @@
     </div>
 
     <div class="main-content">
+        <div class="mobile-top">
+            <button id="toggleSidebar" aria-label="Toggle menu">☰</button>
+            <div style="font-weight:600">Avi's Compiler</div>
+        </div>
         <div id="webdev-ide" class="ide-container">
             <div class="container">
                 <div class="editor">
@@ -839,6 +904,26 @@ fn main() {
 
         // Run the web code initially
         runCode();
+
+        // Mobile sidebar toggle
+        (function(){
+            const toggleBtn = document.getElementById('toggleSidebar');
+            const sidebar = document.querySelector('.sidebar');
+            if (toggleBtn && sidebar) {
+                toggleBtn.addEventListener('click', () => {
+                    sidebar.classList.toggle('open');
+                });
+            }
+
+            // Close sidebar after selecting a language (mobile)
+            document.querySelectorAll('.language-select').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    if (sidebar && sidebar.classList.contains('open')) {
+                        sidebar.classList.remove('open');
+                    }
+                });
+            });
+        })();
     </script>
 </body>
 </html>
