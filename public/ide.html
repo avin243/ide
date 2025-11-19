@@ -222,14 +222,16 @@
 
         .console {
             background-color: var(--dark);
-            color: #10b981;
+            color: var(--light);
             padding: 16px;
             font-family: 'JetBrains Mono', monospace;
             margin-top: 16px;
             border-radius: 8px;
             min-height: 120px;
-            max-height: 200px;
+            max-height: 240px;
             overflow-y: auto;
+            white-space: pre-wrap;
+            word-break: break-word;
         }
 
         .loading {
@@ -271,6 +273,16 @@
             padding: 8px;
             background-color: rgba(34, 197, 94, 0.1);
             border-radius: 4px;
+        }
+
+        .info {
+            color: var(--primary);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 14px;
+            padding: 8px;
+            background-color: rgba(99,102,241,0.06);
+            border-radius: 4px;
+            margin: 8px 0;
         }
 
         /* Python-specific output classes to preserve newlines */
@@ -789,11 +801,12 @@ fn main() {
         async function executeCode(language, code) {
             const loadingEl = document.getElementById(`${language}Loading`);
             const outputEl = document.getElementById(`${language}Output`);
-            
+
             try {
-                loadingEl.style.display = 'block';
+                if (loadingEl) loadingEl.style.display = 'block';
+                if (!outputEl) return;
                 outputEl.innerHTML = '';
-                
+
                 const response = await fetch(`/run/${language}`, {
                     method: 'POST',
                     headers: {
@@ -801,27 +814,41 @@ fn main() {
                     },
                     body: JSON.stringify({ code })
                 });
-                
+
                 const result = await response.json();
-                
+
                 if (result.error) {
                     const escaped = escapeHtml(result.error);
                     outputEl.innerHTML += `<div class="error">${escaped}</div>`;
+                    outputEl.scrollTop = outputEl.scrollHeight;
                 } else {
+                    let wrote = false;
                     if (result.stdout) {
                         const escapedOut = escapeHtml(result.stdout);
                         outputEl.innerHTML += `<div class="success">${escapedOut}</div>`;
+                        wrote = true;
                     }
                     if (result.stderr) {
                         const escapedErr = escapeHtml(result.stderr);
                         outputEl.innerHTML += `<div class="error">${escapedErr}</div>`;
+                        wrote = true;
                     }
+
+                    if (!wrote) {
+                        outputEl.innerHTML += `<div class="info">(No output returned)</div>`;
+                    }
+
+                    // Keep the latest output visible on small screens
+                    outputEl.scrollTop = outputEl.scrollHeight;
                 }
             } catch (err) {
                 const escaped = escapeHtml(err && err.message ? err.message : String(err));
-                outputEl.innerHTML += `<div class="error">Error: ${escaped}</div>`;
+                if (outputEl) {
+                    outputEl.innerHTML += `<div class="error">Error: ${escaped}</div>`;
+                    outputEl.scrollTop = outputEl.scrollHeight;
+                }
             } finally {
-                loadingEl.style.display = 'none';
+                if (loadingEl) loadingEl.style.display = 'none';
             }
         }
 
@@ -831,7 +858,8 @@ fn main() {
             const loadingEl = document.getElementById(`${language}Loading`);
             const outputEl = document.getElementById(`${language}Output`);
             try {
-                loadingEl.style.display = 'block';
+                if (loadingEl) loadingEl.style.display = 'block';
+                if (!outputEl) return;
                 outputEl.innerHTML = '';
 
                 const response = await fetch(`/run/${language}`, {
@@ -845,21 +873,34 @@ fn main() {
                 if (result.error) {
                     const escaped = escapeHtml(result.error);
                     outputEl.innerHTML += `<div class="python-error"><pre>${escaped}</pre></div>`;
+                    outputEl.scrollTop = outputEl.scrollHeight;
                 } else {
+                    let wrote = false;
                     if (result.stdout) {
                         const escapedOut = escapeHtml(result.stdout);
                         outputEl.innerHTML += `<div class="python-success"><pre>${escapedOut}</pre></div>`;
+                        wrote = true;
                     }
                     if (result.stderr) {
                         const escapedErr = escapeHtml(result.stderr);
                         outputEl.innerHTML += `<div class="python-error"><pre>${escapedErr}</pre></div>`;
+                        wrote = true;
                     }
+
+                    if (!wrote) {
+                        outputEl.innerHTML += `<div class="info">(No output returned)</div>`;
+                    }
+
+                    outputEl.scrollTop = outputEl.scrollHeight;
                 }
             } catch (err) {
                 const escaped = escapeHtml(err && err.message ? err.message : String(err));
-                outputEl.innerHTML += `<div class="python-error"><pre>Error: ${escaped}</pre></div>`;
+                if (outputEl) {
+                    outputEl.innerHTML += `<div class="python-error"><pre>Error: ${escaped}</pre></div>`;
+                    outputEl.scrollTop = outputEl.scrollHeight;
+                }
             } finally {
-                loadingEl.style.display = 'none';
+                if (loadingEl) loadingEl.style.display = 'none';
             }
         }
 
