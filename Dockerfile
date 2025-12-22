@@ -1,12 +1,15 @@
 FROM node:20-bullseye
 
-# Install Python3, compilers and JDK (needed if you want to run Python/C++/Java code from the IDE)
+# Install Python, C++ compiler, and Java
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
-       python3 python3-pip g++ default-jdk \
+       python3 python3-pip g++ openjdk-17-jdk \
     && ln -sf /usr/bin/python3 /usr/bin/python \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
+
+# Verify installations at build time
+RUN node -v && python --version && javac -version
 
 WORKDIR /usr/src/app
 
