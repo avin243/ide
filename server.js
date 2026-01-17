@@ -74,6 +74,37 @@ async function executeCode(code, extension, command) {
     }
 }
 
+// C# endpoint - creates a temporary project
+async function executeCSharp(code) {
+    const projectDir = path.join(TEMP_DIR, `proj_${Date.now()}`);
+    const filepath = path.join(projectDir, 'Program.cs');
+
+    try {
+        await fs.mkdir(projectDir);
+        await fs.writeFile(filepath, code);
+
+        return new Promise((resolve) => {
+            const command = `dotnet new console -o "${projectDir}" --force && dotnet run --project "${projectDir}"`;
+            exec(command, { timeout: 15000 }, (error, stdout, stderr) => {
+                // Always attempt to clean up the project directory
+                fs.rm(projectDir, { recursive: true, force: true }).catch(err => {
+                    console.error(`Failed to delete project directory: ${projectDir}`, err);
+                });
+
+                if (error) {
+                    if (error.killed) {
+                        return resolve({ error: 'Execution timed out after 15 seconds.' });
+                    }
+                    return resolve({ stdout, stderr: stderr || error.message });
+                }
+                resolve({ stdout, stderr });
+            });
+        });
+    } catch (err) {
+        return { error: `Server-side error: ${err.message}` };
+    }
+}
+
 // Python endpoint
 app.post('/run/python', async (req, res) => {
     const pyCmd = await commandExists('python3') ? 'python3' : 'python';
@@ -101,12 +132,12 @@ app.post('/run/cpp', async (req, res) => {
     res.json(result);
 });
 
-// C# endpoint - uses dotnet script
+// C# endpoint
 app.post('/run/csharp', async (req, res) => {
     if (!await commandExists('dotnet')) {
         return res.status(500).json({ error: '.NET SDK not found on the server.' });
     }
-    const result = await executeCode(req.body.code, '.cs', filepath => `dotnet script "${filepath}"`);
+    const result = await executeCSharp(req.body.code);
     res.json(result);
 });
 
