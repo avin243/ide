@@ -23,20 +23,20 @@ RUN wget https://golang.org/dl/go${GO_VERSION}.linux-${GO_ARCH}.tar.gz -O /tmp/g
     && tar -C /usr/local -xzf /tmp/go.tar.gz \
     && rm /tmp/go.tar.gz
 
-# Install .NET SDK and the dotnet-script tool for C#
+# Install .NET SDK and the csharp-script workload
 RUN wget https://packages.microsoft.com/config/debian/11/packages-microsoft-prod.deb -O packages-microsoft-prod.deb
 RUN dpkg -i packages-microsoft-prod.deb
 RUN rm packages-microsoft-prod.deb
 RUN apt-get update && \
     apt-get install -y dotnet-sdk-7.0 && \
     rm -rf /var/lib/apt/lists/*
-RUN dotnet tool install --global dotnet-script
+RUN dotnet workload install csharp-script
 
 # Install Rust
 RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
 
 # Verify that all compilers and runtimes are correctly installed and in the PATH
-RUN java -version && javac -version && python --version && g++ --version && dotnet --version && dotnet-script --version && ruby --version && go version && rustc --version
+RUN java -version && javac -version && python --version && g++ --version && dotnet --version && ruby --version && go version && rustc --version
 
 # Set up the Node.js application environment
 WORKDIR /usr/src/app

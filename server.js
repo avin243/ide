@@ -101,12 +101,12 @@ app.post('/run/cpp', async (req, res) => {
     res.json(result);
 });
 
-// C# endpoint - uses dotnet-script
+// C# endpoint - uses dotnet script
 app.post('/run/csharp', async (req, res) => {
-    if (!await commandExists('dotnet-script')) {
-        return res.status(500).json({ error: 'C# scripting tool (dotnet-script) not found on the server.' });
+    if (!await commandExists('dotnet')) {
+        return res.status(500).json({ error: '.NET SDK not found on the server.' });
     }
-    const result = await executeCode(req.body.code, '.csx', filepath => `dotnet-script "${filepath}"`);
+    const result = await executeCode(req.body.code, '.cs', filepath => `dotnet script "${filepath}"`);
     res.json(result);
 });
 
