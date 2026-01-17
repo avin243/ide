@@ -1,0 +1,378 @@
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+:root {
+    /* A modern, calming palette inspired by Tailwind CSS colors */
+    --primary: #3b82f6;       /* Blue 500 */
+    --primary-dark: #2563eb;    /* Blue 600 */
+    --secondary: #14b8a6;      /* Teal 500 */
+    --dark-text: #111827;      /* Gray 900 - for main text */
+    --page-bg: #f9fafb;         /* Gray 50 - for page background */
+    --gray-text: #6b7280;      /* Gray 500 - for secondary text */
+    --success: #10b981;        /* Emerald 500 - for success states */
+    --error: #ef4444;         /* Red 500 - for error states */
+    --border: #d1d5db;        /* Gray 300 - for borders */
+    --editor-bg: #ffffff;     /* White - for editor backgrounds */
+    --sidebar-bg: #1f2937;    /* Gray 800 - for sidebar background */
+    --sidebar-text: #d1d5db;   /* Gray 300 - for sidebar text */
+    --console-bg: #111827;    /* Gray 900 - for console background */
+    --console-text: #9ca3af;   /* Gray 400 - for general console text */
+}
+
+body {
+    font-family: 'Poppins', sans-serif;
+    background-color: var(--page-bg);
+    display: flex;
+    color: var(--dark-text);
+    height: 100vh;
+    overflow: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+.sidebar {
+    width: 240px;
+    background-color: var(--sidebar-bg);
+    color: var(--sidebar-text);
+    padding: 24px;
+    height: 100vh;
+    overflow-y: auto;
+    position: fixed;
+    left: 0;
+    top: 0;
+    flex-shrink: 0;
+    transition: transform 0.28s ease;
+    z-index: 1400;
+}
+
+.logo-container {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 32px;
+    padding: 12px;
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 12px;
+}
+
+.logo {
+    font-size: 24px;
+    font-weight: 600;
+    color: var(--primary);
+    background: var(--page-bg);
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+}
+
+.logo-text {
+    font-size: 18px;
+    font-weight: 600;
+    color: #fff;
+}
+
+.logo-text span {
+    display: block;
+    font-size: 12px;
+    color: var(--gray-text);
+    font-weight: 400;
+}
+
+.language-select {
+    width: 100%;
+    padding: 12px;
+    margin-bottom: 8px;
+    background-color: transparent;
+    color: var(--sidebar-text);
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-family: 'Poppins', sans-serif;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.language-select:hover {
+    background-color: var(--primary);
+    color: #fff;
+    transform: translateX(4px);
+}
+
+.language-select.active {
+    background-color: var(--primary);
+    color: #fff;
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.25);
+}
+
+.main-content {
+    flex: 1;
+    padding: 24px;
+    margin-left: 240px;
+    overflow-y: auto;
+    width: calc(100% - 240px);
+    height: 100vh;
+    min-height: 100vh;
+    position: relative;
+}
+
+.container {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 24px;
+    margin-bottom: 24px;
+}
+
+.ide-container {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+.editor {
+    background-color: var(--editor-bg);
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.07);
+    padding: 16px;
+    border: 1px solid var(--border);
+}
+
+.editor h3 {
+    margin-bottom: 16px;
+    color: var(--dark-text);
+    font-size: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+textarea {
+    width: 100%;
+    min-height: 220px;
+    height: 40vh;
+    max-height: 600px;
+    padding: 16px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    resize: vertical;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 14px;
+    line-height: 1.5;
+    background-color: #fdfdfe;
+}
+
+textarea:focus {
+    outline: 2px solid var(--primary);
+    border-color: transparent;
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+}
+
+.buttons {
+    text-align: center;
+    margin: 24px 0;
+}
+
+button {
+    background-color: var(--primary);
+    color: white;
+    padding: 12px 24px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 16px;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    font-family: 'Poppins', sans-serif;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+button:hover {
+    background-color: var(--primary-dark);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.25);
+}
+
+.output {
+    background-color: var(--editor-bg);
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.07);
+    border: 1px solid var(--border);
+    padding: 24px;
+    margin-top: 24px;
+}
+
+.output h3 {
+    margin-bottom: 16px;
+    color: var(--dark-text);
+    font-size: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+#outputFrame {
+    width: 100%;
+    height: 300px;
+    border: 1px solid var(--border);
+    background-color: var(--page-bg);
+    border-radius: 8px;
+}
+
+.console {
+    background-color: var(--console-bg);
+    color: var(--console-text);
+    padding: 16px;
+    font-family: 'JetBrains Mono', monospace;
+    margin-top: 16px;
+    border-radius: 8px;
+    min-height: 120px;
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+.loading {
+    display: none;
+    text-align: center;
+    margin: 16px 0;
+    color: var(--primary);
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.loading::after {
+    content: "⌛";
+    animation: spin 1s infinite;
+}
+
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+.error {
+    color: var(--error);
+    margin: 8px 0;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 14px;
+    padding: 8px;
+    background-color: rgba(239, 68, 68, 0.05);
+    border-radius: 4px;
+}
+
+.success {
+    color: var(--console-text);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 14px;
+    padding: 8px;
+    border-radius: 4px;
+}
+
+/* Language-specific output classes to preserve newlines */
+.python-success pre, .python-error pre {
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 14px;
+    margin: 0;
+}
+
+.python-success {
+    color: var(--console-text);
+    padding: 8px;
+}
+
+.python-error {
+    color: var(--error);
+    background-color: rgba(239, 68, 68, 0.05);
+    padding: 8px;
+    border-radius: 4px;
+}
+
+
+/* Scrollbar Styling */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--border);
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: var(--gray-text);
+}
+
+/* Mobile / Responsive tweaks */
+.mobile-top {
+    display: none;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 8px;
+    background: white;
+    border-radius: 8px;
+    margin-bottom: 12px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.06);
+}
+
+.mobile-top button {
+    font-size: 20px;
+    width: 44px;
+    height: 44px;
+    border-radius: 8px;
+    justify-content: center;
+}
+
+@media (max-width: 900px) {
+    .sidebar {
+        width: 100%;
+        height: auto;
+        top: 0;
+        left: 0;
+        transform: translateY(-110%);
+        z-index: 1200;
+    }
+
+    .sidebar.open {
+        transform: translateY(0);
+    }
+
+    .main-content {
+        margin-left: 0;
+        width: 100%;
+        padding: 16px;
+        height: auto;
+    }
+
+    .container {
+        grid-template-columns: 1fr;
+    }
+
+    .mobile-top { display: flex; }
+
+    .buttons { margin: 12px 0; }
+
+    button { width: 100%; padding: 14px; font-size: 16px; }
+
+    #outputFrame { height: 40vh; }
+
+    .console { max-height: 30vh; min-height: 120px; }
+}

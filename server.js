@@ -10,12 +10,12 @@ app.use(cors());
 
 const PORT = process.env.PORT || 3000;
 
-// Serve static frontend files (so ide.html is available at /ide.html)
-app.use(express.static(__dirname));
+// Serve static frontend files from the 'public' directory
+app.use(express.static(path.join(__dirname, 'public')));
 
-// Serve ide.html at root path (/) so the IDE loads automatically
+// Serve ide.html at the root path
 app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, './public/ide.html'));
+    res.sendFile(path.join(__dirname, 'public', 'ide.html'));
 });
 
 // Health check endpoint
@@ -35,118 +35,102 @@ const TEMP_DIR = path.join(__dirname, 'temp');
     }
 })();
 
-// Helper function to create and execute a file
+// Helper to check if a command exists
+const commandExists = (command) => {
+    return new Promise((resolve) => {
+        exec(`${command} --version`, (error) => {
+            resolve(!error);
+        });
+    });
+};
+
+// Generic helper function to create and execute a file
 async function executeCode(code, extension, command) {
     const filename = `temp_${Date.now()}${extension}`;
     const filepath = path.join(TEMP_DIR, filename);
-    
+
     try {
         await fs.writeFile(filepath, code);
-        
-        return new Promise((resolve, reject) => {
-            exec(command(filepath), { timeout: 5000 }, (error, stdout, stderr) => {
-                fs.unlink(filepath).catch(console.error); // Cleanup
-                
-                if (error && error.killed) {
-                    reject('Execution timed out');
+
+        return new Promise((resolve) => {
+            exec(command(filepath), { timeout: 8000 }, (error, stdout, stderr) => {
+                // Always attempt to clean up the source file
+                fs.unlink(filepath).catch(err => {
+                    if (err.code !== 'ENOENT') console.error(`Failed to delete source file: ${filepath}`, err);
+                });
+
+                if (error) {
+                    if (error.killed) {
+                        return resolve({ error: 'Execution timed out after 8 seconds.' });
+                    }
+                    // For many interpreted languages and compilers, the error message is in stderr
+                    return resolve({ stdout, stderr: stderr || error.message });
                 }
-                
                 resolve({ stdout, stderr });
             });
         });
     } catch (err) {
-        throw err;
+        return { error: `Server-side error during file operation: ${err.message}` };
     }
 }
 
 // Python endpoint
 app.post('/run/python', async (req, res) => {
-    // Find available python executable (prefer python3)
-    const findPython = () => new Promise((resolve) => {
-        exec('python3 --version', (err) => {
-            if (!err) return resolve('python3');
-            exec('python --version', (err2) => {
-                if (!err2) return resolve('python');
-                resolve(null);
-            });
-        });
-    });
-
-    try {
-        const pyCmd = await findPython();
-        if (!pyCmd) {
-            return res.status(500).json({
-                error: 'Python is not installed in the runtime ("python3" or "python" not found).',
-                hints: [
-                    'If you control the Railway service, deploy with a Dockerfile that includes Python.',
-                    'Or switch to a Railway environment that provides Python.',
-                    'As a quick workaround, run Python execution client-side with Pyodide or similar.'
-                ]
-            });
-        }
-
-        const result = await executeCode(
-            req.body.code,
-            '.py',
-            (filepath) => `${pyCmd} "${filepath}"`
-        );
-        res.json(result);
-    } catch (err) {
-        res.status(500).json({ error: err.toString() });
-    }
+    const pyCmd = await commandExists('python3') ? 'python3' : 'python';
+    const result = await executeCode(req.body.code, '.py', filepath => `${pyCmd} "${filepath}"`);
+    res.json(result);
 });
 
 // Java endpoint
 app.post('/run/java', async (req, res) => {
-    try {
-        // Extract class name from code
-        const className = req.body.code.match(/public\s+class\s+(\w+)/)?.[1] || 'Main';
-        const result = await executeCode(
-            req.body.code,
-            '.java',
-            (filepath) => `javac "${filepath}" && java -cp "${path.dirname(filepath)}" ${className}`
-        );
-        res.json(result);
-    } catch (err) {
-        res.status(500).json({ error: err.toString() });
-    }
+    const className = req.body.code.match(/public\s+class\s+(\w+)/)?.[1] || 'Main';
+    const result = await executeCode(req.body.code, '.java', filepath => {
+        const dir = path.dirname(filepath);
+        const classfile = path.join(dir, `${className}.class`);
+        return `javac "${filepath}" && java -cp "${dir}" ${className}; rm "${classfile}"`;
+    });
+    res.json(result);
 });
 
 // C++ endpoint
 app.post('/run/cpp', async (req, res) => {
-    try {
-        // Check if g++ is available
-        try {
-            await new Promise((resolve, reject) => {
-                exec('g++ --version', (error) => {
-                    if (error) {
-                        reject(new Error('C++ compiler (g++) is not installed. Please install MinGW-w64 and add it to your PATH.'));
-                    }
-                    resolve();
-                });
-            });
-        } catch (error) {
-            return res.status(500).json({
-                error: error.message,
-                instructions: `To install g++ on Windows:
-1. Download MinGW-w64 from: https://github.com/msys2/msys2-installer/releases/
-2. Install MSYS2
-3. Open MSYS2 terminal and run: pacman -S mingw-w64-x86_64-gcc
-4. Add to PATH: C:\\msys64\\mingw64\\bin
-5. Restart your terminal/IDE`
-            });
-        }
-
-        const result = await executeCode(
-            req.body.code,
-            '.cpp',
-            (filepath) => `g++ "${filepath}" -o "${filepath}.exe" && "${filepath}.exe"`
-        );
-        res.json(result);
-    } catch (err) {
-        res.status(500).json({ error: err.toString() });
-    }
+    const result = await executeCode(req.body.code, '.cpp', filepath => {
+        const exepath = `${filepath}.out`;
+        return `g++ "${filepath}" -o "${exepath}" && "${exepath}"; rm "${exepath}"`;
+    });
+    res.json(result);
 });
+
+// C# endpoint - uses dotnet-script
+app.post('/run/csharp', async (req, res) => {
+    if (!await commandExists('dotnet-script')) {
+        return res.status(500).json({ error: 'C# scripting tool (dotnet-script) not found on the server.' });
+    }
+    const result = await executeCode(req.body.code, '.csx', filepath => `dotnet-script "${filepath}"`);
+    res.json(result);
+});
+
+// Ruby endpoint
+app.post('/run/ruby', async (req, res) => {
+    const result = await executeCode(req.body.code, '.rb', filepath => `ruby "${filepath}"`);
+    res.json(result);
+});
+
+// Go endpoint
+app.post('/run/go', async (req, res) => {
+    const result = await executeCode(req.body.code, '.go', filepath => `go run "${filepath}"`);
+    res.json(result);
+});
+
+// Rust endpoint
+app.post('/run/rust', async (req, res) => {
+    const result = await executeCode(req.body.code, '.rs', filepath => {
+        const exepath = `${filepath}.out`;
+        return `rustc "${filepath}" -o "${exepath}" && "${exepath}"; rm "${exepath}"`;
+    });
+    res.json(result);
+});
+
 
 app.listen(PORT, () => {
     console.log(`✨ Server running on http://localhost:${PORT}`);
