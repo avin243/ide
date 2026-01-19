@@ -55,7 +55,7 @@ async function executeCode(code, extension, command, cleanup = true) {
         await fs.writeFile(filepath, code);
 
         return new Promise((resolve) => {
-            exec(command(filepath), { timeout: 8000 }, (error, stdout, stderr) => {
+            exec(command(filepath), { timeout: 20000 }, (error, stdout, stderr) => {
                 // Always attempt to clean up the source file
                 if(cleanup) {
                     fs.unlink(filepath).catch(err => {
@@ -65,7 +65,7 @@ async function executeCode(code, extension, command, cleanup = true) {
 
                 if (error) {
                     if (error.killed) {
-                        return resolve({ error: 'Execution timed out after 8 seconds.' });
+                        return resolve({ error: 'Execution timed out after 20 seconds.' });
                     }
                     // For many interpreted languages and compilers, the error message is in stderr
                     return resolve({ stdout, stderr: stderr || error.message });
@@ -92,7 +92,7 @@ async function executeCSharp(code) {
 
         return new Promise((resolve) => {
             const command = `dotnet run --project "${projectDir}"`;
-            exec(command, { timeout: 15000 }, (error, stdout, stderr) => {
+            exec(command, { timeout: 30000 }, (error, stdout, stderr) => {
                 // Always attempt to clean up the project directory
                 fs.rm(projectDir, { recursive: true, force: true }).catch(err => {
                     console.error(`Failed to delete project directory: ${projectDir}`, err);
@@ -100,7 +100,7 @@ async function executeCSharp(code) {
 
                 if (error) {
                     if (error.killed) {
-                        return resolve({ error: 'Execution timed out after 15 seconds.' });
+                        return resolve({ error: 'Execution timed out after 30 seconds.' });
                     }
                     return resolve({ stdout, stderr: stderr || error.message });
                 }
@@ -125,8 +125,8 @@ async function executeRust(code) {
         await fs.writeFile(mainRsPath, code);
 
         return new Promise((resolve) => {
-            const command = `cargo run --release --manifest-path "${path.join(projectDir, 'Cargo.toml')}"`;
-            exec(command, { timeout: 20000 }, (error, stdout, stderr) => {
+            const command = `cargo run --release --quiet --manifest-path "${path.join(projectDir, 'Cargo.toml')}"`;
+            exec(command, { timeout: 30000 }, (error, stdout, stderr) => {
                 // Always attempt to clean up the project directory
                 fs.rm(projectDir, { recursive: true, force: true }).catch(err => {
                     console.error(`Failed to delete project directory: ${projectDir}`, err);
@@ -134,7 +134,7 @@ async function executeRust(code) {
 
                 if (error) {
                     if (error.killed) {
-                        return resolve({ error: 'Execution timed out after 20 seconds.' });
+                        return resolve({ error: 'Execution timed out after 30 seconds.' });
                     }
                     return resolve({ stdout, stderr: stderr || error.message });
                 }
