@@ -55,7 +55,7 @@ async function executeCode(code, extension, command, cleanup = true) {
         await fs.writeFile(filepath, code);
 
         return new Promise((resolve) => {
-            exec(command(filepath), { timeout: 20000 }, (error, stdout, stderr) => {
+            exec(command(filepath), { timeout: 60000 }, (error, stdout, stderr) => {
                 // Always attempt to clean up the source file
                 if(cleanup) {
                     fs.unlink(filepath).catch(err => {
@@ -65,7 +65,7 @@ async function executeCode(code, extension, command, cleanup = true) {
 
                 if (error) {
                     if (error.killed) {
-                        return resolve({ error: 'Execution timed out after 20 seconds.' });
+                        return resolve({ error: 'Execution timed out after 60 seconds.' });
                     }
                     // For many interpreted languages and compilers, the error message is in stderr
                     return resolve({ stdout, stderr: stderr || error.message });
@@ -92,7 +92,7 @@ async function executeCSharp(code) {
 
         return new Promise((resolve) => {
             const command = `dotnet run --project "${projectDir}"`;
-            exec(command, { timeout: 30000 }, (error, stdout, stderr) => {
+            exec(command, { timeout: 60000 }, (error, stdout, stderr) => {
                 // Always attempt to clean up the project directory
                 fs.rm(projectDir, { recursive: true, force: true }).catch(err => {
                     console.error(`Failed to delete project directory: ${projectDir}`, err);
@@ -100,7 +100,7 @@ async function executeCSharp(code) {
 
                 if (error) {
                     if (error.killed) {
-                        return resolve({ error: 'Execution timed out after 30 seconds.' });
+                        return resolve({ error: 'Execution timed out after 60 seconds.' });
                     }
                     return resolve({ stdout, stderr: stderr || error.message });
                 }
